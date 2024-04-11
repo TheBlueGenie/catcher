@@ -1,7 +1,6 @@
 // vim:fileencoding=utf-8:foldmethod=marker
 
 // Defines and includes {{{
-#include <math.h>
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -14,13 +13,15 @@
 #define SCR_HEIGHT 700
 #define CAPTION "Catcher"
 #define FPS 60
-#define SPRITE_SIZE 64
+#define SPRITE_SIZE 32
 #define NUM_ITEMS 10
-#define MIN_Y_SPEED 200
+#define MIN_Y_SPEED 250
 #define MAX_Y_SPEED 400
-#define SPAWN_TIME 1.5f
+#define SPAWN_TIME 1.0f
 #define SPAWN_POS -50
 #define PLAYER_LIVES 3
+#define UI_MARGIN 10
+#define UI_FONT_SIZE 30
 // }}}
 
 // Declarations {{{
@@ -116,17 +117,17 @@ int main(void) {
 
     switch (currentState) {
     case SPLASH:
-      DrawText(CAPTION, (int)(GetScreenWidth() - MeasureText(CAPTION, 30)) / 2,
-               350, 30, SKYBLUE);
+      DrawText(CAPTION, (int)(GetScreenWidth() - MeasureText(CAPTION, UI_FONT_SIZE)) / 2,
+               350, UI_FONT_SIZE, SKYBLUE);
       break;
 
     case TITLE:
-      DrawText(CAPTION, (int)(GetScreenWidth() - MeasureText(CAPTION, 30)) / 2,
-               10, 30, SKYBLUE);
+      DrawText(CAPTION, (int)(GetScreenWidth() - MeasureText(CAPTION, UI_FONT_SIZE)) / 2,
+               10, UI_FONT_SIZE, SKYBLUE);
       DrawText(
           "Press Enter To Start",
-          (int)(GetScreenWidth() - MeasureText("Press Enter To Start", 30)) / 2,
-          600, 30, SKYBLUE);
+          (int)(GetScreenWidth() - MeasureText("Press Enter To Start", UI_FONT_SIZE)) / 2,
+          600, UI_FONT_SIZE, SKYBLUE);
       break;
 
     case PLAYING:
@@ -141,23 +142,21 @@ int main(void) {
       break;
 
     case ENDGAME:
-      DrawText(CAPTION, (int)(GetScreenWidth() - MeasureText(CAPTION, 30)) / 2,
-               10, 30, SKYBLUE);
+      DrawText(CAPTION, (int)(GetScreenWidth() - MeasureText(CAPTION, UI_FONT_SIZE)) / 2,
+               10, UI_FONT_SIZE, SKYBLUE);
       DrawText("Game Over",
-               (int)(GetScreenWidth() - MeasureText("Game Over", 30)) / 2, 150,
-               30, SKYBLUE);
-      DrawText("Score", (int)(GetScreenWidth() - MeasureText("Score", 30)) / 2,
-               300, 30, SKYBLUE);
+               (int)(GetScreenWidth() - MeasureText("Game Over", UI_FONT_SIZE)) / 2, 150,
+               UI_FONT_SIZE, SKYBLUE);
+      DrawText("Score", (int)(GetScreenWidth() - MeasureText("Score", UI_FONT_SIZE)) / 2,
+               300, UI_FONT_SIZE, SKYBLUE);
       DrawText(TextFormat("%d", game.player.score),
                (int)(GetScreenWidth() -
-                     MeasureText(TextFormat("%d", game.player.score), 30)) /
-                   2,
-               340, 30, SKYBLUE);
+                     MeasureText(TextFormat("%d", game.player.score), UI_FONT_SIZE)) / 2,
+               340, UI_FONT_SIZE, SKYBLUE);
       DrawText(
           "Press Enter To Continue",
-          (int)(GetScreenWidth() - MeasureText("Press Enter To Continue", 30)) /
-              2,
-          600, 30, SKYBLUE);
+          (int)(GetScreenWidth() - MeasureText("Press Enter To Continue", UI_FONT_SIZE)) / 2,
+          600, UI_FONT_SIZE, SKYBLUE);
 
       break;
 
@@ -179,6 +178,7 @@ void init(Game *game) {
   game->player.pos.x = (GetScreenWidth() - SPRITE_SIZE) / 2.0f;
   game->player.pos.y = (GetScreenHeight() - SPRITE_SIZE * 1.1f);
   game->player.lives = PLAYER_LIVES;
+  game->player.score = 0;
 
   // Initialize game items
   for (int i = 0; i < game->numItems; ++i) {
@@ -218,7 +218,7 @@ void update(Game *game) {
     dir = 1;
   }
 
-  game->player.pos.x += dir * 100 * GetFrameTime();
+  game->player.pos.x += dir * 400 * GetFrameTime();
 
   // Update Items
   for (int i = 0; i < game->numItems; ++i) {
@@ -226,14 +226,16 @@ void update(Game *game) {
       game->items[i].pos.y += game->items[i].ySpeed * GetFrameTime();
 
       if (game->items[i].pos.y > GetScreenHeight()) {
-        game->items[i].pos.y = SPAWN_POS; // TODO: replace this magic number
+        game->items[i].pos.y = SPAWN_POS; 
         continue;
       }
 
       // Check collisions
       bool collision = false;
-      Rectangle itemBox = {game->items[i].pos.x, game->items[i].pos.y, SPRITE_SIZE, SPRITE_SIZE};
-      Rectangle playerBox = {game->player.pos.x, game->player.pos.y, SPRITE_SIZE, SPRITE_SIZE};
+      Rectangle itemBox = {game->items[i].pos.x, game->items[i].pos.y,
+                           SPRITE_SIZE, SPRITE_SIZE};
+      Rectangle playerBox = {game->player.pos.x, game->player.pos.y,
+                             SPRITE_SIZE, SPRITE_SIZE};
 
       collision = CheckCollisionRecs(itemBox, playerBox);
 
@@ -262,11 +264,12 @@ void draw(Game *game) {
   drawItems(game);
 
   // Draw Score
-  DrawText(TextFormat("Score: %d", game->player.score), 10, 10, 30, RAYWHITE);
+  DrawText(TextFormat("Score: %d", game->player.score), UI_MARGIN, 10, UI_FONT_SIZE, RAYWHITE);
 
   // Draw Lives
-  int txtWidth = MeasureText(TextFormat("Score: %d", game->player.lives), 30);
-  DrawText(TextFormat("Lives: %d", game->player.lives), GetScreenWidth() - (txtWidth + 10), 10, 30, RAYWHITE);
+  int txtWidth = MeasureText(TextFormat("Score: %d", game->player.lives), UI_FONT_SIZE);
+  DrawText(TextFormat("Lives: %d", game->player.lives),
+           GetScreenWidth() - (txtWidth + 10), 10, UI_FONT_SIZE, RAYWHITE);
 
   // Draw Player
   DrawRectangleV(game->player.pos, (Vector2){SPRITE_SIZE, SPRITE_SIZE},
